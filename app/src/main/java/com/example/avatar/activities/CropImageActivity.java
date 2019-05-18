@@ -1,11 +1,17 @@
 package com.example.avatar.activities;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -16,6 +22,13 @@ import com.example.avatar.R;
 import com.example.avatar.utils.SharedPrefsUtil;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -79,7 +92,19 @@ public class CropImageActivity extends AppCompatActivity implements View.OnClick
                 intent.putExtra("URI", result.getUri());
             } else {
                 MainActivity.bitmap = CropImage.toOvalBitmap(result.getBitmap());
-
+                StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
+                filename.append(".png");
+                File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+                File des = new File(storageDir,filename.toString());
+                try (FileOutputStream out = new FileOutputStream(des)) {
+                    MainActivity.bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+                    // PNG is a lossless format, the compression factor (100) is ignored
+                    sendBroadcast(new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE", Uri.fromFile(des)));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+//                MainActivity.mCropImageUri  = Uri.parse(MediaStore.Images.Media.insertImage(getContentResolver(), MainActivity.bitmap,
+//                        filename.toString(), filename.toString()));
             }
             setResult(RESULT_OK,intent);
             finish();

@@ -82,8 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         } else if (requestCode==1001 && resultCode==RESULT_OK){
             try {
-                if (getIntent().getParcelableExtra("URI")!=null){
-                    mCropImageUri = getIntent().getParcelableExtra("URI");
+                if (mCropImageUri!=null){
                     mImage.setImageURI(mCropImageUri);
                 } else {
                     mImage.setImageBitmap(bitmap);
