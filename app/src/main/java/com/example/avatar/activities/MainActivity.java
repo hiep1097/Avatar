@@ -61,13 +61,15 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
     RecyclerView mRecyclerView;
     CropImageAdapter adapter;
     List<String> list = new ArrayList<>();
-    int count;
+    long count;
     static int position;
+    DatabaseReference myRef;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        accessDBFireBase();
         readList();
         adapter = new CropImageAdapter(this,list,this);
         mRecyclerView.setAdapter(adapter);
@@ -88,21 +90,91 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
 
     private void readList(){
         list.clear();
-        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
+//        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
+//        for (int i=0;i<count;i++){
+//            String path = SharedPrefsUtil.getStringPreference(this,"PATH"+i);
+//            list.add(path);
+//        }
+
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                try {
+                    count = (long) dataSnapshot.child("COUNT").getValue();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
         for (int i=0;i<count;i++){
-            String path = SharedPrefsUtil.getStringPreference(this,"PATH"+i);
-            list.add(path);
+            int xx = i;
+            myRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    try {
+                        String path = (String) dataSnapshot.child("PATH"+xx).getValue();
+                        list.add(path);
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
+        System.out.println("sizeeee"+list.size());
     }
 
     private void updateList(int position,String path){
-        SharedPrefsUtil.setStringPreference(this,"PATH"+position,path);
+        //SharedPrefsUtil.setStringPreference(this,"PATH"+position,path);
+        myRef.child("PATH"+position).setValue(path);
     }
+
     private void addToList(){
-        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
-        SharedPrefsUtil.setStringPreference(this,"PATH"+count,"");
+//        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
+//        SharedPrefsUtil.setStringPreference(this,"PATH"+count,"");
+//        count++;
+//        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count);
+
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                try {
+                    count = (long) dataSnapshot.child("COUNT").getValue();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        myRef.child("PATH"+count).setValue("");
         count++;
-        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count);
+        myRef.child("COUNT").setValue(count);
+    }
+
+    private void removeItemAt(int position){
+        int count  = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
+        for (int i=0;i<count;i++){
+            SharedPrefsUtil.setStringPreference(this,"PATH"+i,"");
+        }
+        list.remove(position);
+        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count-1);
+        for (int i=0;i<list.size();i++){
+            SharedPrefsUtil.setStringPreference(this,"PATH"+i,list.get(i));
+        }
     }
 
     @Override
@@ -139,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
 
     private void logoutGoogle(){
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-               // .requestIdToken(getString(R.string.default_web_client_id))
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
@@ -228,18 +300,6 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         mRecyclerView.setAdapter(adapter);
     }
 
-    private void removeItemAt(int position){
-        int count  = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
-        for (int i=0;i<count;i++){
-            SharedPrefsUtil.setStringPreference(this,"PATH"+i,"");
-        }
-        list.remove(position);
-        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count-1);
-        for (int i=0;i<list.size();i++){
-            SharedPrefsUtil.setStringPreference(this,"PATH"+i,list.get(i));
-        }
-    }
-
     private void saveTotalImage(){
         mLayout.setDrawingCacheEnabled(true);
         mLayout.buildDrawingCache(true);
@@ -259,50 +319,11 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         }
     }
 
-    private void readResultFromFireBase(){
+    private void accessDBFireBase(){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference databaseReference = database.getReference().child("users");
         DatabaseReference currentUserDB = databaseReference.child(user.getUid());
-        DatabaseReference myRef = currentUserDB.child("result");
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                try {
-//                    long WORKOUT_NUM = (long) dataSnapshot.child("WORKOUT_NUM").getValue();
-//                    long MINUTES_NUM = (long) dataSnapshot.child("MINUTES_NUM").getValue();
-//                    long CALORIES_NUM = (long) dataSnapshot.child("CALORIES_NUM").getValue();
-//                    long CUR_STREAK_NUM = (long) dataSnapshot.child("CUR_STREAK_NUM").getValue();
-//                    long BEST_STREAK_NUM = (long) dataSnapshot.child("BEST_STREAK_NUM").getValue();
-//                    CalendarFragment.this.WORKOUT_NUM = (int) WORKOUT_NUM;
-//                    CalendarFragment.this.MINUTES_NUM = (int) MINUTES_NUM;
-//                    CalendarFragment.this.CALORIES_NUM = (int) CALORIES_NUM;
-//                    CalendarFragment.this.CUR_STREAK_NUM = (int) CUR_STREAK_NUM;
-//                    CalendarFragment.this.BEST_STREAK_NUM = (int) BEST_STREAK_NUM;
-//                    mWorkoutNum.setText(WORKOUT_NUM+"");
-//                    mMinutesNum.setText(MINUTES_NUM+"");
-//                    mCaloriesNum.setText(CALORIES_NUM+"");
-//                    mCurStreakNum.setText(CUR_STREAK_NUM+"");
-//                    mBestStreakNum.setText(BEST_STREAK_NUM+"");
-                    // Toast.makeText(getContext(),"Loaded",Toast.LENGTH_SHORT).show();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void addResultToFireBase(){
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference databaseReference = database.getReference().child("users");
-        DatabaseReference currentUserDB = databaseReference.child(user.getUid());
-        DatabaseReference myRef = currentUserDB.child("result");
-        //myRef.child("CUR_STREAK_NUM").setValue(CUR_STREAK_NUM);
+        myRef = currentUserDB.child("data");
     }
 }
