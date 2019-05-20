@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Login"
+            android:text="ĐĂNG NHẬP"
             android:textColor="#000"
             android:textSize="@dimen/_30sdp"
             android:layout_marginBottom="@dimen/_10sdp"
@@ -34,7 +34,7 @@
             android:id="@+id/edt_pass"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
+            android:hint="Mật khẩu"
             android:inputType="textPassword"
             />
         <LinearLayout
@@ -46,7 +46,7 @@
                 android:id="@+id/btn_signin"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Login"
+                android:text="ĐĂNG NHẬP"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/_10sdp"
                 android:background="@drawable/roundrect_green"
@@ -58,7 +58,7 @@
                 android:id="@+id/btn_signup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Signup"
+                android:text="ĐĂNG KÝ"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/_10sdp"
                 android:background="@drawable/roundrect_green"

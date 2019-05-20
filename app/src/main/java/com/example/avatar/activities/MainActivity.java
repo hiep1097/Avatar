@@ -10,38 +10,53 @@ import android.net.Uri;
 import android.os.Environment;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.example.avatar.MyItemDecoration;
 import com.example.avatar.R;
 import com.example.avatar.adapters.CropImageAdapter;
 import com.example.avatar.listeners.ItemOnClick;
-import com.example.avatar.utils.SharedPrefsUtil;
+import com.example.avatar.models.ItemCropImage;
+import com.example.avatar.models.ItemFullImage;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.theartofdev.edmodo.cropper.CropImage;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -56,21 +71,27 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
     public static Uri mCropImageUri = null;
     public static Bitmap bitmap, saveBm;
     @BindView(R.id.ln_main)
-    LinearLayout mLayout;
+    FrameLayout mLayout;
     @BindView(R.id.rcv_crop_image)
     RecyclerView mRecyclerView;
+    @BindView(R.id.progress_bar)
+    ProgressBar mProgressBar;
     CropImageAdapter adapter;
-    List<String> list = new ArrayList<>();
+    List<ItemCropImage> list = new ArrayList<>();
     long count;
     static int position;
     DatabaseReference myRef;
+    DatabaseReference myDBImageRef;
+    StorageReference imagesRef;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        mProgressBar.setVisibility(View.GONE);
         accessDBFireBase();
-        readList();
+        accessStorageFirebase();
+        getListFromFirebase();
         adapter = new CropImageAdapter(this,list,this);
         mRecyclerView.setAdapter(adapter);
         mRecyclerView.setLayoutManager(new GridLayoutManager(this,2));
@@ -88,22 +109,61 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         return true;
     }
 
-    private void readList(){
-        list.clear();
-//        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
-//        for (int i=0;i<count;i++){
-//            String path = SharedPrefsUtil.getStringPreference(this,"PATH"+i);
-//            list.add(path);
-//        }
+    private void accessDBFireBase(){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference databaseReference = database.getReference().child("users");
+        DatabaseReference currentUserDB = databaseReference.child(user.getUid());
+        myRef = currentUserDB.child("data");
+        myDBImageRef = currentUserDB.child("dbimages");
+    }
 
-        myRef.addValueEventListener(new ValueEventListener() {
+    private void accessStorageFirebase(){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageRef = storage.getReference().child("user").child((user.getUid()));
+        imagesRef = storageRef.child("images");
+    }
+
+    private void getListFromFirebase(){
+        List<ItemCropImage> list = new ArrayList<>();
+        myRef.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                try {
-                    count = (long) dataSnapshot.child("COUNT").getValue();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                String value = (String) dataSnapshot.getValue();
+                list.add(new ItemCropImage(dataSnapshot.getKey(),value));
+                updateList(list);
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                String value = (String) dataSnapshot.getValue();
+                String key = dataSnapshot.getKey();
+                int vt = -1;
+                for (int i=0;i<list.size();i++)
+                    if (list.get(i).getId().equals(key)){
+                        vt = i;
+                        break;
+                    }
+                list.set(vt,new ItemCropImage(key,value));
+                updateList(list);
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                String key = dataSnapshot.getKey();
+                int vt = -1;
+                for (int i=0;i<list.size();i++)
+                    if (list.get(i).getId().equals(key)){
+                        vt = i;
+                        break;
+                    }
+                list.remove(vt);
+                updateList(list);
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
             }
 
             @Override
@@ -111,70 +171,31 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
 
             }
         });
-
-        for (int i=0;i<count;i++){
-            int xx = i;
-            myRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    try {
-                        String path = (String) dataSnapshot.child("PATH"+xx).getValue();
-                        list.add(path);
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-        }
-        System.out.println("sizeeee"+list.size());
-    }
-
-    private void updateList(int position,String path){
-        //SharedPrefsUtil.setStringPreference(this,"PATH"+position,path);
-        myRef.child("PATH"+position).setValue(path);
     }
 
     private void addToList(){
-//        count = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
-//        SharedPrefsUtil.setStringPreference(this,"PATH"+count,"");
-//        count++;
-//        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count);
-
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                try {
-                    count = (long) dataSnapshot.child("COUNT").getValue();
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-        myRef.child("PATH"+count).setValue("");
-        count++;
-        myRef.child("COUNT").setValue(count);
+        myRef.push().setValue("");
     }
 
     private void removeItemAt(int position){
-        int count  = SharedPrefsUtil.getIntegerPreference(this,"COUNT",0);
-        for (int i=0;i<count;i++){
-            SharedPrefsUtil.setStringPreference(this,"PATH"+i,"");
-        }
-        list.remove(position);
-        SharedPrefsUtil.setIntegerPreference(this,"COUNT",count-1);
-        for (int i=0;i<list.size();i++){
-            SharedPrefsUtil.setStringPreference(this,"PATH"+i,list.get(i));
-        }
+        myRef.child(list.get(position).getId()).removeValue();
+    }
+
+    private void updateItemAt(int position, String path){
+        myRef.child(list.get(position).getId()).setValue(path);
+    }
+
+    private void updateList(List<ItemCropImage> list){
+        this.list.clear();
+        this.list.addAll(list);
+        adapter = new CropImageAdapter(MainActivity.this, this.list,this);
+        mRecyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+//        if (list.size() == 0) {
+//            mTapToStart.setVisibility(View.VISIBLE);
+//        } else {
+//            mTapToStart.setVisibility(View.GONE);
+//        }
     }
 
     @Override
@@ -189,13 +210,9 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         switch (id) {
             case R.id.it_add:
                 addToList();
-                readList();
-                adapter = new CropImageAdapter(MainActivity.this,list,this);
-                adapter.notifyDataSetChanged();
-                mRecyclerView.setAdapter(adapter);
                 break;
             case R.id.it_save:
-                saveTotalImage();
+                saveFullImage();
                 break;
             case R.id.it_logout:
                 FirebaseAuth.getInstance().signOut();
@@ -251,9 +268,7 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         } else if (requestCode==1001 && resultCode==RESULT_OK){
             try {
                 String path = data.getStringExtra("PATH");
-                updateList(position,path);
-                readList();
-                adapter.notifyDataSetChanged();
+                updateItemAt(position,path);
             } catch (Exception e){
 
             }
@@ -293,37 +308,55 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
     @Override
     public void removeItem(int pos) {
         position = pos;
-        removeItemAt(pos);
-        readList();
-        adapter = new CropImageAdapter(MainActivity.this,list,this);
-        adapter.notifyDataSetChanged();
-        mRecyclerView.setAdapter(adapter);
+        removeItemAt(position);
     }
 
-    private void saveTotalImage(){
+    private void saveFullImage(){
         mLayout.setDrawingCacheEnabled(true);
         mLayout.buildDrawingCache(true);
         saveBm = Bitmap.createBitmap(mLayout.getDrawingCache());
         mLayout.setDrawingCacheEnabled(false);
         StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
         filename.append(".jpg");
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File des = new File(storageDir,filename.toString());
-        try (FileOutputStream out = new FileOutputStream(des)) {
-            MainActivity.saveBm.compress(Bitmap.CompressFormat.JPEG, 100, out); // bmp is your Bitmap instance
-            // PNG is a lossless format, the compression factor (100) is ignored
-            sendBroadcast(new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE", Uri.fromFile(des)));
-            Toast.makeText(this,"Đã lưu",Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        saveBm.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] data = baos.toByteArray();
+        StorageReference sref = imagesRef.child(filename.toString());
+        UploadTask uploadTask = sref.putBytes(data);
+        mProgressBar.setVisibility(View.VISIBLE);
 
-    private void accessDBFireBase(){
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference databaseReference = database.getReference().child("users");
-        DatabaseReference currentUserDB = databaseReference.child(user.getUid());
-        myRef = currentUserDB.child("data");
+        uploadTask = sref.putBytes(data);
+        Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                // Continue with the task to get the download URL
+                return sref.getDownloadUrl();
+            }
+        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+            @Override
+            public void onComplete(@NonNull Task<Uri> task) {
+                if (task.isSuccessful()) {
+                    Toast.makeText(MainActivity.this,"Lưu thành công",Toast.LENGTH_SHORT).show();
+                    String name = filename.toString();
+                    float s = data.length;
+                    DecimalFormat df = new DecimalFormat("#.##");
+                    String size = (s>=1024*1024?df.format((s/(1024*1024)))+"MB":df.format((s/(1024)))+"KB");
+                    String url =task.getResult().toString();
+                    ItemFullImage fullImage = new ItemFullImage();
+                    fullImage.setName(name);
+                    fullImage.setSize(size);
+                    fullImage.setUrl(url);
+                    myDBImageRef.push().setValue(fullImage);
+                } else {
+                    Toast.makeText(MainActivity.this,"Lưu thất bại",Toast.LENGTH_SHORT).show();
+                }
+                mProgressBar.setVisibility(View.GONE);
+                Intent intent = new Intent(MainActivity.this,FullImageActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 }

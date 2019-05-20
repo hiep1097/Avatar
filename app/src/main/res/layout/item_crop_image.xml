@@ -12,7 +12,7 @@
         android:id="@+id/img_crop"
         android:layout_width="@dimen/_120sdp"
         android:layout_height="@dimen/_120sdp"
-        app:srcCompat="@drawable/ic_add"
+        app:srcCompat="@drawable/circle_add_img"
         />
 
 </LinearLayout>

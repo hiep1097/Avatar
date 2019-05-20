@@ -1,6 +1,7 @@
 package com.example.avatar.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -11,26 +12,32 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.avatar.R;
+import com.example.avatar.activities.FullImageDetailActivity;
 import com.example.avatar.listeners.ItemOnClick;
 import com.example.avatar.models.ItemCropImage;
-import com.example.avatar.utils.SharedPrefsUtil;
+import com.example.avatar.models.ItemFullImage;
 
 import java.io.File;
 import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class CropImageAdapter extends RecyclerView.Adapter<CropImageAdapter.ViewHolder> {
+public class FullImageAdapter extends RecyclerView.Adapter<FullImageAdapter.ViewHolder> {
     private Context context;
-    private List<ItemCropImage> arrayList;
+    private List<ItemFullImage> arrayList;
     private ItemOnClick listener;
 
 
-    public CropImageAdapter(Context context, List<ItemCropImage> arrayList, ItemOnClick listener) {
+    public FullImageAdapter(Context context, List<ItemFullImage> arrayList, ItemOnClick listener) {
         this.context = context;
         this.arrayList = arrayList;
         this.listener = listener;
@@ -38,30 +45,28 @@ public class CropImageAdapter extends RecyclerView.Adapter<CropImageAdapter.View
 
     @NonNull
     @Override
-    public CropImageAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        View v = LayoutInflater.from(context).inflate(R.layout.item_crop_image,viewGroup,false);
+    public FullImageAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        View v = LayoutInflater.from(context).inflate(R.layout.item_full_image,viewGroup,false);
         return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CropImageAdapter.ViewHolder holder, int position) {
-        try {
-            if (!arrayList.get(position).getPath().equals("")){
-                try {
-                    Uri uri = Uri.fromFile(new File(arrayList.get(position).getPath()));
-                    if (uri!=null) holder.mImage.setImageURI(uri);
-                } catch (Exception e){
+    public void onBindViewHolder(@NonNull FullImageAdapter.ViewHolder holder, int position) {
+        Glide.with(context)
+                .load(arrayList.get(position).getUrl())
+                .placeholder(R.drawable.ic_thumbnail)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(holder.mImage);
 
-                }
-            }
-        } catch (Exception e){
-
-        }
+        holder.mName.setText(arrayList.get(position).getName());
+        holder.mSize.setText(arrayList.get(position).getSize());
 
         holder.mImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               listener.clickItem(position);
+                Intent intent = new Intent(context, FullImageDetailActivity.class);
+                intent.putExtra("URL",arrayList.get(position).getUrl());
+                context.startActivity(intent);
             }
         });
 
@@ -102,8 +107,12 @@ public class CropImageAdapter extends RecyclerView.Adapter<CropImageAdapter.View
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        @BindView(R.id.img_crop)
+        @BindView(R.id.img_full)
         ImageView mImage;
+        @BindView(R.id.tv_name)
+        TextView mName;
+        @BindView(R.id.tv_size)
+        TextView mSize;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ButterKnife.bind(this,itemView);

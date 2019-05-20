@@ -37,16 +37,11 @@
         </activity>
 
         <activity android:name=".activities.MainActivity">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.MAIN" />-->
-
-            <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
         </activity>
         <activity
             android:name=".activities.CropImageActivity"
             android:launchMode="singleTop"
-            android:parentActivityName=".activities.MainActivity"></activity>
+            android:parentActivityName=".activities.MainActivity"/>
         <activity
             android:name=".activities.SigninActivity"
             android:launchMode="singleTop">
@@ -60,12 +55,15 @@
             android:name=".activities.SignupActivity"
             android:launchMode="singleTop"
             android:parentActivityName=".activities.SigninActivity">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.MAIN" />-->
-
-            <!--<category android:name="android.intent.category.LAUNCHER" />-->
-            <!--</intent-filter>-->
         </activity>
+        <activity
+            android:name=".activities.FullImageActivity"
+            android:launchMode="singleTop"
+            android:parentActivityName=".activities.MainActivity"/>
+        <activity
+            android:name=".activities.FullImageDetailActivity"
+            android:launchMode="singleTop"
+            android:parentActivityName=".activities.FullImageActivity"/>
     </application>
 
 </manifest>
