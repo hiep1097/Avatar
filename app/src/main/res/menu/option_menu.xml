@@ -12,6 +12,11 @@
         app:showAsAction="always"
         />
     <item
+        android:id="@+id/it_saved"
+        android:title="Đã lưu"
+        app:showAsAction="never"
+        />
+    <item
         android:id="@+id/it_logout"
         android:title="Đăng xuất"
         app:showAsAction="never"

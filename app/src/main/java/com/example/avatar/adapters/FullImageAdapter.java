@@ -34,12 +34,14 @@ import butterknife.ButterKnife;
 public class FullImageAdapter extends RecyclerView.Adapter<FullImageAdapter.ViewHolder> {
     private Context context;
     private List<ItemFullImage> arrayList;
+    private List<String> listKey;
     private ItemOnClick listener;
 
 
-    public FullImageAdapter(Context context, List<ItemFullImage> arrayList, ItemOnClick listener) {
+    public FullImageAdapter(Context context, List<ItemFullImage> arrayList, List<String> listKey, ItemOnClick listener) {
         this.context = context;
         this.arrayList = arrayList;
+        this.listKey = listKey;
         this.listener = listener;
     }
 
@@ -58,6 +60,7 @@ public class FullImageAdapter extends RecyclerView.Adapter<FullImageAdapter.View
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(holder.mImage);
 
+
         holder.mName.setText(arrayList.get(position).getName());
         holder.mSize.setText(arrayList.get(position).getSize());
 
@@ -66,6 +69,8 @@ public class FullImageAdapter extends RecyclerView.Adapter<FullImageAdapter.View
             public void onClick(View v) {
                 Intent intent = new Intent(context, FullImageDetailActivity.class);
                 intent.putExtra("URL",arrayList.get(position).getUrl());
+                intent.putExtra("NAME",arrayList.get(position).getName());
+                intent.putExtra("KEY",listKey.get(position));
                 context.startActivity(intent);
             }
         });

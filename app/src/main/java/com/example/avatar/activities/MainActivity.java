@@ -23,6 +23,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.avatar.MyItemDecoration;
@@ -72,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
     public static Bitmap bitmap, saveBm;
     @BindView(R.id.ln_main)
     FrameLayout mLayout;
+    @BindView(R.id.tv_empty)
+    TextView mEmpty;
     @BindView(R.id.rcv_crop_image)
     RecyclerView mRecyclerView;
     @BindView(R.id.progress_bar)
@@ -191,11 +194,11 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
         adapter = new CropImageAdapter(MainActivity.this, this.list,this);
         mRecyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
-//        if (list.size() == 0) {
-//            mTapToStart.setVisibility(View.VISIBLE);
-//        } else {
-//            mTapToStart.setVisibility(View.GONE);
-//        }
+        if (list.size() == 0) {
+            mEmpty.setVisibility(View.VISIBLE);
+        } else {
+            mEmpty.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -213,6 +216,10 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
                 break;
             case R.id.it_save:
                 saveFullImage();
+                break;
+            case R.id.it_saved:
+                Intent it_saved = new Intent(MainActivity.this,FullImageActivity.class);
+                startActivity(it_saved);
                 break;
             case R.id.it_logout:
                 FirebaseAuth.getInstance().signOut();
@@ -343,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements ItemOnClick {
                     String name = filename.toString();
                     float s = data.length;
                     DecimalFormat df = new DecimalFormat("#.##");
-                    String size = (s>=1024*1024?df.format((s/(1024*1024)))+"MB":df.format((s/(1024)))+"KB");
+                    String size = (s>=1024*1024?df.format((s/(1024*1024)))+" MB":df.format((s/(1024)))+" KB");
                     String url =task.getResult().toString();
                     ItemFullImage fullImage = new ItemFullImage();
                     fullImage.setName(name);

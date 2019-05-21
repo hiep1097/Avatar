@@ -17,4 +17,12 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         />
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Nhấn thêm ảnh để bắt đầu"
+        android:textSize="@dimen/_17sdp"
+        />
 </FrameLayout>

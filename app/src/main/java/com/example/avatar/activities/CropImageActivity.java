@@ -94,7 +94,6 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
     private void handleCropResult(CropImageView.CropResult result) {
         Intent intent = new Intent();
         if (result.getError() == null) {
-            Toast.makeText(this, "Image crop success", Toast.LENGTH_LONG).show();
             intent.putExtra("SAMPLE_SIZE", result.getSampleSize());
             MainActivity.bitmap = CropImage.toOvalBitmap(result.getBitmap());
             StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
@@ -109,6 +108,7 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Toast.makeText(this, "Image crop success", Toast.LENGTH_LONG).show();
             setResult(RESULT_OK,intent);
             finish();
         } else {
