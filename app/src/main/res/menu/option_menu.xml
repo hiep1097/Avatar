@@ -2,23 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/it_add"
-        android:title="Thêm ảnh"
-        app:showAsAction="always"
-        />
-    <item
         android:id="@+id/it_save"
         android:title="Lưu"
         app:showAsAction="always"
-        />
-    <item
-        android:id="@+id/it_saved"
-        android:title="Đã lưu"
-        app:showAsAction="never"
-        />
-    <item
-        android:id="@+id/it_logout"
-        android:title="Đăng xuất"
-        app:showAsAction="never"
         />
 </menu>

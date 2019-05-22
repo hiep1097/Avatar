@@ -2,32 +2,22 @@ package com.example.avatar.activities;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.avatar.R;
-import com.example.avatar.adapters.CropImageAdapter;
-import com.example.avatar.utils.SharedPrefsUtil;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -60,7 +50,7 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.option_menu_crop_act,menu);
+        getMenuInflater().inflate(R.menu.option_menu,menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -108,7 +98,7 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Toast.makeText(this, "Image crop success", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Image crop success", Toast.LENGTH_SHORT).show();
             setResult(RESULT_OK,intent);
             finish();
         } else {
