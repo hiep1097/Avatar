@@ -5,11 +5,24 @@
             <size
                 android:width="100dp"
                 android:height="100dp" />
-            <stroke android:width="10dp" android:color="#28000000"/>
+            <stroke android:width="3dp"
+                android:color="#000"
+                android:dashGap="@dimen/_3sdp"
+                android:dashWidth="@dimen/_10sdp"
+                />
+            <solid android:color="#fff"/>
         </shape>
     </item>
-    <item
-        android:drawable="@drawable/ic_plus"
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <size
+                android:width="60dp"
+                android:height="60dp" />
+            <solid android:color="#28000000"/>
+        </shape>
+    </item>
+    <item android:gravity="center"
+        android:drawable="@drawable/ic_thumbnail"
         >
     </item>
 </layer-list>

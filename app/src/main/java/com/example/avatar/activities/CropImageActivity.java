@@ -11,6 +11,9 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.avatar.R;
@@ -30,13 +33,18 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
         CropImageView.OnSetImageUriCompleteListener{
     @BindView(R.id.img_crop)
     CropImageView mCropImage;
+    @BindView(R.id.btn_save)
+    Button mSave;
     Uri uri;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_crop_image);
         ButterKnife.bind(this);
         initImage();
+        mSave.setOnClickListener(l-> mCropImage.getCroppedImageAsync());
     }
     
     private void initImage(){
@@ -46,23 +54,6 @@ public class CropImageActivity extends AppCompatActivity implements CropImageVie
         mCropImage.setAspectRatio(1, 1);
         mCropImage.setOnSetImageUriCompleteListener(this);
         mCropImage.setOnCropImageCompleteListener(this);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.option_menu,menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.it_save:
-                mCropImage.getCroppedImageAsync();
-                break;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

@@ -6,20 +6,27 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.print.PrintHelper;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputType;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.util.TypedValue;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -62,21 +69,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     ImageView mImage4;
     @BindView(R.id.progress_bar)
     ProgressBar mProgressBar;
+    @BindView(R.id.btn_save)
+    Button mSave;
+    @BindView(R.id.btn_print)
+    Button mPrint;
     int position;
-    private boolean haveEmail;
+    private boolean haveEmail, isPrint;
     Typeface type;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         type = Typeface.createFromAsset(getAssets(),"fonts/Pacifico-Regular.ttf");
         mName.setTypeface(type);
-        mName.setOnClickListener(this::onClick);
+        Canvas canvas = new Canvas();
+        Paint strokePaint = new Paint();
+        strokePaint.setARGB(255, 0, 0, 0);
+        strokePaint.setTextAlign(Paint.Align.CENTER);
+        strokePaint.setTextSize(16);
+        strokePaint.setTypeface(Typeface.DEFAULT_BOLD);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setStrokeWidth(2);
+
+        Paint textPaint = new Paint();
+        textPaint.setARGB(255, 255, 255, 255);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(16);
+        textPaint.setTypeface(Typeface.DEFAULT_BOLD);
+
+        canvas.drawText("Some Text", 0, 0, strokePaint);
+        canvas.drawText("Some Text", 0, 0, textPaint);
+
         mImage1.setOnClickListener(this::onClick);
         mImage2.setOnClickListener(this::onClick);
         mImage3.setOnClickListener(this::onClick);
         mImage4.setOnClickListener(this::onClick);
+        mSave.setOnClickListener(this::onClick);
+        mPrint.setOnClickListener(this::onClick);
     }
 
     @Override
@@ -94,23 +126,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
         return true;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.option_menu,menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.it_save:
-                checkEmail();
-                break;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
 
@@ -160,29 +175,72 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void saveFullImage(){
+
         mProgressBar.setVisibility(View.VISIBLE);
-        mLayout.setDrawingCacheEnabled(true);
-        mLayout.buildDrawingCache(true);
-        saveBm = Bitmap.createBitmap(mLayout.getDrawingCache());
-        mLayout.setDrawingCacheEnabled(false);
-        StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
-        filename.append(".jpg");
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File des = new File(storageDir,filename.toString());
-        try (FileOutputStream out = new FileOutputStream(des)) {
-            MainActivity.saveBm.compress(Bitmap.CompressFormat.JPEG, 100, out); // bmp is your Bitmap instance
-            // PNG is a lossless format, the compression factor (100) is ignored
-            sendBroadcast(new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE", Uri.fromFile(des)));
-            Toast.makeText(this,"Đã lưu",Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
+        Bitmap[] parts = new Bitmap[5];
+        float one_px = getResources().getDimension(R.dimen.one_px);
+        float canh = 360*one_px;
+        try {
+            mImage1.invalidate();
+            BitmapDrawable drawable = (BitmapDrawable) mImage1.getDrawable();
+            Bitmap bitmap = drawable.getBitmap();
+            parts[1] = Bitmap.createScaledBitmap(bitmap, (int) canh, (int) canh, false);
+        } catch (Exception e){
+
+        }
+        try {
+            mImage2.invalidate();
+            BitmapDrawable drawable = (BitmapDrawable) mImage2.getDrawable();
+            Bitmap bitmap = drawable.getBitmap();
+            parts[2] = Bitmap.createScaledBitmap(bitmap, (int) canh, (int) canh, false);
+        } catch (Exception e){
+
+        }
+        try {
+            mImage3.invalidate();
+            BitmapDrawable drawable = (BitmapDrawable) mImage3.getDrawable();
+            Bitmap bitmap = drawable.getBitmap();
+            parts[3] = Bitmap.createScaledBitmap(bitmap, (int) canh, (int) canh, false);
+        } catch (Exception e){
+
+        }
+        try {
+            mImage4.invalidate();
+            BitmapDrawable drawable = (BitmapDrawable) mImage4.getDrawable();
+            Bitmap bitmap = drawable.getBitmap();
+            parts[4] = Bitmap.createScaledBitmap(bitmap, (int) canh, (int) canh, false);
+        } catch (Exception e){
+
+        }
+        saveBm = Bitmap.createBitmap((int) (400*one_px+2*canh), (int)(400*one_px+2*canh), Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(saveBm);
+        canvas.drawColor(Color.parseColor("#ffffff"));
+        Paint paint = new Paint();
+        if (parts[1]!=null) canvas.drawBitmap(parts[1], 100*one_px, 100*one_px, paint);
+        if (parts[2]!=null) canvas.drawBitmap(parts[2], 300*one_px+canh, 100*one_px, paint);
+        if (parts[3]!=null) canvas.drawBitmap(parts[3], 100*one_px, 300*one_px+canh, paint);
+        if (parts[4]!=null) canvas.drawBitmap(parts[4], 300*one_px+canh, 300*one_px+canh, paint);
+
+        if (isPrint==false){
+            StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
+            filename.append(".jpg");
+            File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+            File des = new File(storageDir,filename.toString());
+            try (FileOutputStream out = new FileOutputStream(des)) {
+                MainActivity.saveBm.compress(Bitmap.CompressFormat.JPEG, 100, out); // bmp is your Bitmap instance
+                // PNG is a lossless format, the compression factor (100) is ignored
+                sendBroadcast(new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE", Uri.fromFile(des)));
+                Toast.makeText(this,"Đã lưu",Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            Uri photoURI = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider",des);
+            intent.setDataAndType(photoURI,"image/*");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
         }
         mProgressBar.setVisibility(View.GONE);
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        Uri photoURI = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider",des);
-        intent.setDataAndType(photoURI,"image/*");
-        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(intent);
     }
 
     private void requestEmail(){
@@ -220,9 +278,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.tv_name:
-                changeName();
-                break;
             case R.id.img_crop1:
                 cropImage(1);
                 break;
@@ -235,37 +290,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.img_crop4:
                 cropImage(4);
                 break;
+            case R.id.btn_save:
+                checkEmail();
+                break;
+            case R.id.btn_print:
+                doPhotoPrint();
+                break;
         }
     }
 
-    private void changeName() {
-        MaterialDialog dialog = new MaterialDialog.Builder(this)
-                .title("Nhập tên")
-                .inputRange(3,30)
-                .inputType(InputType.TYPE_CLASS_TEXT)
-                .positiveText("Đồng ý")
-                .negativeText("Hủy bỏ")
-                .input("Nhập tên", "", new MaterialDialog.InputCallback() {
-                    @Override
-                    public void onInput(MaterialDialog dialog, CharSequence input) {
-                        // Do something
-                    }
-                }).show();
-        dialog.getActionButton(DialogAction.POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mName.setText(dialog.getInputEditText().getText().toString());
-                mName.setTypeface(type);
-                dialog.dismiss();
-            }
-        });
-        dialog.getActionButton(DialogAction.NEGATIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
+    private void doPhotoPrint() {
+        isPrint = true;
+        checkEmail();
+        PrintHelper photoPrinter = new PrintHelper(this);
+        photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
+        photoPrinter.printBitmap("droids.jpg - print", saveBm);
+        isPrint = false;
     }
 
     private void cropImage(int position){
