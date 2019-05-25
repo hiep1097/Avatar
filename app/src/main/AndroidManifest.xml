@@ -30,16 +30,30 @@
         <activity
             android:name=".activities.MainActivity"
             android:launchMode="singleTop">
+        </activity>
+        <activity
+            android:name=".activities.CropImageActivity"
+            android:launchMode="singleTop"
+            android:parentActivityName=".activities.MainActivity" />
+        <activity
+            android:name=".activities.SigninActivity"
+            android:launchMode="singleTop">
+        </activity>
+        <activity
+            android:name=".activities.SignupActivity"
+            android:launchMode="singleTop"
+            >
+        </activity>
+        <activity
+            android:name=".activities.SplashActivity"
+            android:launchMode="singleTop"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".activities.CropImageActivity"
-            android:launchMode="singleTop"
-            android:parentActivityName=".activities.MainActivity" />
     </application>
 
 </manifest>

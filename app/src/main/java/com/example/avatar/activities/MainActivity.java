@@ -39,6 +39,7 @@ import com.example.avatar.BuildConfig;
 import com.example.avatar.R;
 import com.example.avatar.utils.DrawableUtil;
 import com.example.avatar.utils.SharedPrefsUtil;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.theartofdev.edmodo.cropper.CropImage;
@@ -74,8 +75,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.btn_print)
     Button mPrint;
     int position;
-    private boolean haveEmail, isPrint;
+    private boolean haveEmail, isPrint = false;
     Typeface type;
+    int pick_id;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,30 +87,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ButterKnife.bind(this);
         type = Typeface.createFromAsset(getAssets(),"fonts/Pacifico-Regular.ttf");
         mName.setTypeface(type);
-        Canvas canvas = new Canvas();
-        Paint strokePaint = new Paint();
-        strokePaint.setARGB(255, 0, 0, 0);
-        strokePaint.setTextAlign(Paint.Align.CENTER);
-        strokePaint.setTextSize(16);
-        strokePaint.setTypeface(Typeface.DEFAULT_BOLD);
-        strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(2);
-
-        Paint textPaint = new Paint();
-        textPaint.setARGB(255, 255, 255, 255);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(16);
-        textPaint.setTypeface(Typeface.DEFAULT_BOLD);
-
-        canvas.drawText("Some Text", 0, 0, strokePaint);
-        canvas.drawText("Some Text", 0, 0, textPaint);
-
         mImage1.setOnClickListener(this::onClick);
         mImage2.setOnClickListener(this::onClick);
         mImage3.setOnClickListener(this::onClick);
         mImage4.setOnClickListener(this::onClick);
         mSave.setOnClickListener(this::onClick);
         mPrint.setOnClickListener(this::onClick);
+
+        //dang xuat
+        mName.setOnLongClickListener(l->{
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(MainActivity.this,SigninActivity.class);
+            startActivity(intent);
+            finish();
+            return false;
+        });
     }
 
     @Override
@@ -151,7 +144,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int requestCode, String permissions[], int[] grantResults) {
         if (requestCode == REQUEST_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                CropImage.startPickImageActivity(this);
+                if (pick_id == 1) CropImage.startPickImageActivity(this);
+                else if (pick_id == 2) checkEmail();
+                else doPhotoPrint();
             } else {
                 Toast.makeText(this, "Cancelling, required permissions are not granted", Toast.LENGTH_LONG)
                         .show();
@@ -168,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void checkEmail(){
         haveEmail = SharedPrefsUtil.getBooleanPreference(this,"EMAIL",false);
         if (!haveEmail){
-            requestEmail();
+            requestEmail(isPrint);
         } else {
             saveFullImage();
         }
@@ -220,8 +215,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (parts[2]!=null) canvas.drawBitmap(parts[2], 300*one_px+canh, 100*one_px, paint);
         if (parts[3]!=null) canvas.drawBitmap(parts[3], 100*one_px, 300*one_px+canh, paint);
         if (parts[4]!=null) canvas.drawBitmap(parts[4], 300*one_px+canh, 300*one_px+canh, paint);
-
-        if (isPrint==false){
+        if (!isPrint){
             StringBuilder filename = new StringBuilder(new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
             filename.append(".jpg");
             File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
@@ -243,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mProgressBar.setVisibility(View.GONE);
     }
 
-    private void requestEmail(){
+    private void requestEmail(boolean isPrint){
         MaterialDialog dialog = new MaterialDialog.Builder(this)
                 .title("Nhập email")
                 .inputRange(3,30)
@@ -264,7 +258,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 FirebaseDatabase database = FirebaseDatabase.getInstance();
                 DatabaseReference myRef = database.getReference("email");
                 myRef.push().setValue(dialog.getInputEditText().getText().toString());
-                saveFullImage();
+                if (!isPrint) saveFullImage();
+                else doPhotoPrint();
             }
         });
         dialog.getActionButton(DialogAction.NEGATIVE).setOnClickListener(new View.OnClickListener() {
@@ -279,22 +274,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.img_crop1:
+                pick_id = 1;
                 cropImage(1);
                 break;
             case R.id.img_crop2:
+                pick_id = 1;
                 cropImage(2);
                 break;
             case R.id.img_crop3:
+                pick_id = 1;
                 cropImage(3);
                 break;
             case R.id.img_crop4:
+                pick_id = 1;
                 cropImage(4);
                 break;
             case R.id.btn_save:
-                checkEmail();
+                pick_id = 2;
+                if (!hasPermissions(this, permissions)) {
+                    ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION);
+                } else {
+                    checkEmail();
+                }
                 break;
             case R.id.btn_print:
-                doPhotoPrint();
+                pick_id = 3;
+                if (!hasPermissions(this, permissions)) {
+                    ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSION);
+                } else {
+                    doPhotoPrint();
+                }
                 break;
         }
     }
